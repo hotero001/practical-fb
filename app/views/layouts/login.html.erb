@@ -1,0 +1,161 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"
+xml:fb="http://www.facebook.com/2008/fbml">
+<head>
+<meta http-equiv="content-type" content="text/html;charset=UTF-8" />
+<title>Nonaddictive Login</title>
+</head>
+<body>
+
+  <div id="fb-root"></div>
+
+  <div class="fb-login-button" data-max-rows="1" data-size="xlarge" data-show-faces="false" data-auto-logout-link="true" data-scope="public_profile,user_events,rsvp_event,read_mailbox" onlogin="redirect()"></div>
+
+    <script type="text/javascript">
+ function statusChangeCallback(response) {
+      console.log('statusChangeCallback');
+      console.log(response);
+
+      if (response.status === 'connected') {
+         redirect();
+      } else if (response.status === 'not_authorized') {
+         console.log('NOT AUTHORIZED');
+      } else {
+         console.log('NOT LOGGED INTO FACEBOOK');
+      }
+   }
+
+   function checkLoginState() {
+      FB.getLoginStatus(function(response) {
+         statusChangeCallback(response);
+      });
+   }
+
+   window.fbAsyncInit = function() {
+      FB.init({
+         appId : <%= Facebook::APP_ID %>,
+         cookie : true,
+         xfbml : true,
+         version : 'v2.2'
+      });
+
+      FB.getLoginStatus(function(response) {
+         statusChangeCallback(response);
+      });
+
+   };
+
+   (function(d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s); js.id = id;
+      js.src = "//connect.facebook.net/en_US/all.js"; //sdk.js#xfbml=1&appId=<%= Facebook::APP_ID %>&version=v2.3
+      fjs.parentNode.insertBefore(js, fjs);
+   }(document, 'script', 'facebook-jssdk'));
+
+   function redirect() {
+      console.log('Welcome!');
+      FB.api('/me', function(response) {
+         console.log('Successful login on login.html for: ' + response.name);
+         //console.log(response);
+         uid = response['id'];
+         //console.log(uid);
+      });
+
+      FB.api('/me/events', function(response) {
+         //console.log(response);
+         for (var curEvent = response.data.length - 1; curEvent >= response.data.length-10; curEvent -= 1) {
+            document.getElementById('events').innerHTML += 'Event ' + (response.data.length - curEvent) + ": " + response.data[curEvent].name + '</br>';
+         }
+      });
+
+      //console.log(uid);
+      //console.log('test');
+      //session['FB'] = FB;
+      FB.api('/me/inbox', function(response) {
+         console.log(response);
+         
+         // write inbox content
+         for (var curConv = 0; curConv < 10; curConv += 1) {
+            document.getElementById('content').innerHTML += "<a id='conv" + curConv + "' href='#'>" + response.data[curConv].to.data[0].name + "</a></br>";
+            console.log("conv" + curConv);
+         }
+         addListeners(response);
+      });
+      console.log('stuff');
+      //body.onload = function() {
+      //}
+
+      //location.href = '/success'
+   }
+
+   function addListeners(response) {
+      for (var cur = 0; cur < 10; cur += 1) {
+         console.log(cur);
+         document.getElementById("conv" + cur).addEventListener("click", function() {
+            console.log('line 96 ' + cur);
+            loadConv(this.id, response);
+         }, false);
+      }
+   }
+
+   function SendMessage() {
+      console.log('Sending message...');
+      FB.ui({
+         method: 'send',
+         link: 'http://lahacks.com/'
+      });
+   }
+
+   function loadConv(curConv, response) {
+      // write conversation
+      curConv = parseInt(curConv.substr(4), 10);
+      console.log('loadconv ' + curConv);
+      document.getElementById('middle').innerHTML = "<h2>" + response.data[curConv].to.data[0].name + "</h2>";
+      var max = response.data[curConv].comments.data.length;
+      for (var curMsg = (max - 10) > 0 ? (max - 10) : 0;
+            curMsg < max;
+            curMsg += 1) {
+         document.getElementById('middle').innerHTML += response.data[curConv].comments.data[curMsg].from.name + ': ' + response.data[curConv].comments.data[curMsg].message + '</br></br>';
+      }
+   };
+
+    setTimeout(function(){
+      window.location.reload(1);
+    }, 50000);
+
+   </script>
+
+<div id="pagewrap">
+
+  <div id="header">
+    <h1>3 Column Responsive Layout</h1>
+  </div>
+    
+  <div id="content">
+    <h2>Inbox</h2>
+    
+  </div>
+  
+  <div id="middle">
+    <h2>Select a Conversation</h2>
+    
+  </div>
+
+  <div id="sidebar">
+    <h2>Events</h2>
+    <div id='events'></div>
+  </div>
+  
+  <div id='footer'>
+  </div>
+  
+
+</div>
+
+<a id="myLink" title="Send Message" href="#" onclick="SendMessage();return false;">Send Message </br> </a>
+
+</body>
+</html>
+
+
+
